@@ -6,7 +6,7 @@ The Advanced Security Information Model (ASIM) enables you to use and create sou
 
 For more information, see:
 
-- [Normalization and the Advanced Security Information Model (ASIM)](https://aka.ms/AboutASIM)
+- [Normalization and the Advanced Security Information Mfghdfgdsfgodel (ASIM)](https://aka.ms/AboutASIM)
 - [Deploy all of ASIM](https://aka.ms/DeployASIM)
 - [ASIM Dns normalization schema reference](https://aka.ms/ASimDnsDoc)
 
