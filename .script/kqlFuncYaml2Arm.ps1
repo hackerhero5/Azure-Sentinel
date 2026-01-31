@@ -1,4 +1,4 @@
-# .script/kqlFuncYaml2Arm.ps1
+# .script/kqlFuncYaml2Arm.ps1sadasdsad
 Write-Host "--- Research Proof of Concept ---"
 
 # 1. Demonstrate access to the environment (Read-only proof)
